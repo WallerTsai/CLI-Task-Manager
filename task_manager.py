@@ -4,34 +4,22 @@ import json
 from enum import Enum
 import os
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+TASK_FILE = os.path.join(SCRIPT_DIR, "tasks.json")
+
 class TaskStatus(Enum):
-    """ Enumeration of possible task statuses """
     TODO = "todo"
     IN_PROGRESS = "in-progress"
     DONE = "done"
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-TASK_FILE = os.path.join(SCRIPT_DIR, "tasks.json")
-
 valid_statuses = {status.value for status in TaskStatus}
 
 def is_valid_status(value:str) -> bool:
-    """Check if a status value is valid
     
-    Args:
-        value (str): Status value to validate
-        
-    Returns:
-        bool: True if valid, False otherwise
-    """
     return value in valid_statuses
 
 def load_tasks() -> dict:
-    """Load tasks from JSON file
     
-    Returns:
-        dict: Dictionary containing all tasks
-    """
     try:
         with open(TASK_FILE,'r') as f:
             return json.load(f)
@@ -43,24 +31,13 @@ def load_tasks() -> dict:
         return {}
     
 def save_tasks(jsondata:dict) -> None:
-    """Save tasks to JSON file with ID reorganization
     
-    Args:
-        jsondata (dict): Task data to save
-    """
     with open(TASK_FILE,'w') as f:
         jsondata = reorganize_ids(jsondata)
         json.dump(jsondata,f,indent=4)
 
 def reorganize_ids(jsondata:dict) -> dict:
-    """Reorganize task IDs into contiguous numerical sequence
     
-    Args:
-        jsondata (dict): Original task data with existing IDs
-        
-    Returns:
-        dict: New task data with sequential IDs starting from 1
-    """
     if not jsondata:
         return {}
     
@@ -71,12 +48,7 @@ def reorganize_ids(jsondata:dict) -> dict:
     return new_tasks
 
 def add_task(jsondata:dict,description:str) -> None:
-    """Add a new task to the task list
     
-    Args:
-        jsondata (dict): Task data to modify
-        description (str): Description of the new task
-    """
     max_id = max((int(k) for k in jsondata.keys()), default=0)
     new_id = str(max_id + 1)
     jsondata[new_id] = {
@@ -88,35 +60,20 @@ def add_task(jsondata:dict,description:str) -> None:
     print(f"Task added successfully (ID: {new_id})")
 
 def delete_task(jsondata:dict,task_id) -> None:
-    """Remove a task from the task list
     
-    Args:
-        jsondata (dict): Task data to modify
-        task_id (str): ID of the task to remove
-    """
     if jsondata.pop(task_id,None):
         print(f"Task (ID: {task_id}) deleted successfully")
     else:
         print(f"Task (ID: {task_id}) does not exist")
 
 def clean_tasks(jsondata:dict) -> None:
-    """Clear all tasks from the task list
     
-    Args:
-        jsondata (dict): Task data to clear
-    """
     jsondata.clear()
     print(f"Task list cleaned up")
 
 def update_task_status(jsondata:dict,task_id:str,new_status:str) -> None:
-    """Update the status of a specific task
     
-    Args:
-        jsondata (dict): Task data to modify
-        task_id (str): ID of the task to update
-        new_status (str): New status value for the task
-    """
-    if not is_valid_status(new_status): # 判断类型在不在枚举类中
+    if not is_valid_status(new_status): 
         print(f"Invalid status. Allowed statuses are: {', '.join([s.value for s in TaskStatus])}")
         return
     try:
@@ -127,12 +84,7 @@ def update_task_status(jsondata:dict,task_id:str,new_status:str) -> None:
         print(f"Task (ID: {task_id}) does not exist")
 
 def list_tasks(jsondata: dict, status_filter:str = "all") -> None:
-    """Display tasks in a formatted table
     
-    Args:
-        jsondata (dict): Task data to display
-        status_filter (str): Filter tasks by status (default: 'all')(other: 'todo','in-progress','done')
-    """
     if not jsondata:
         print("No tasks found")
 
@@ -153,7 +105,6 @@ def list_tasks(jsondata: dict, status_filter:str = "all") -> None:
     print("-" * 90)
 
 class SupportedQueries:
-    " Configuration for supported CLI commands"
     _supported_queries = {
         "add": {
             "target": add_task,
@@ -195,20 +146,12 @@ class SupportedQueries:
 
     @property
     def get_supported_queries(self) -> dict:
-        """Get configured command specifications
         
-        Returns:
-            dict: Command configuration dictionary
-        """
         return self._supported_queries
 
     @classmethod
     def get_parser(cls) -> argparse.ArgumentParser:
-        """Create CLI argument parser
         
-        Returns:
-            argparse.ArgumentParser: Configured command line parser
-        """
         parser = argparse.ArgumentParser(description="A simple CLI task manager.")
         subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -227,13 +170,11 @@ def main():
     args = parser.parse_args()
     kwargs = vars(args)
 
-    # Load tasks
     tasks = load_tasks()
 
     command_info = supported_queries[kwargs.pop("command")]
     command_info["target"](tasks,**kwargs)
 
-    # Save tasks
     save_tasks(tasks)
     
 if __name__ == "__main__":
